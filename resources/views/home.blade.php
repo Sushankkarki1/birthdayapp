@@ -1,20 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
-</head>
-<body>
+@extends('layouts.app')
 
-@auth
+@section('content')
+<div class="container">
+    @if(session('success'))
+        <div style="color: green;">{{ session('success') }}</div>
+    @endif
+
+    @if ($errors->any())
+        <div style="color: red;">
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @auth
     {{-- Logged in state --}}
     <p>You are logged in</p>
 
     <form action="/logout" method="POST" style="margin-bottom: 1em;">
         @csrf
         <button>Log out</button>
-    </form>    
+    </form>
 
     {{-- File upload section --}}
     <div style="border: 3px solid green; padding: 1em; width: 400px; margin-bottom: 1em;">
@@ -48,13 +57,43 @@
         @endif
     </div>
 
-@endauth
+    {{-- Post creation --}}
+    <hr>
+    <h2>Create Post</h2>
+    <form method="POST" action="/posts">
+        @csrf
+        <textarea name="body" rows="4" cols="50" required></textarea><br>
+        <button type="submit">Post</button>
+    </form>
 
-@guest
+    {{-- Posts list --}}
+    <h3>Your Posts</h3>
+    @if(Auth::check() && Auth::user()->posts && count(Auth::user()->posts))
+        @foreach (Auth::user()->posts as $post)
+            <div style="border: 1px solid #ccc; padding: 10px; margin-top: 10px;">
+                <form method="POST" action="/posts/{{ $post->id }}">
+                    @csrf
+                    @method('PUT')
+                    <textarea name="body" rows="2" cols="50">{{ $post->body }}</textarea><br>
+                    <button type="submit">Update</button>
+                </form>
+                <form method="POST" action="/posts/{{ $post->id }}" style="display:inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit">Delete</button>
+                </form>
+            </div>
+        @endforeach
+    @else
+        <p>You have no posts yet.</p>
+    @endif
+    @endauth
+
+    @guest
     {{-- Registration form --}}
-    <div style="border: 3px solid black; padding: 1em; width: 300px; margin-bottom: 1em;">
+    <div style="border: 3px solid black; padding: 1em; width: 300px; margin-bottom: 1em;" class="registration">
         <h2>Register</h2>
-        <form action="/register" method="POST">
+        <form action="/register" method="POST" >
             @csrf
             <input name="name" type="text" placeholder="Name" required>
             <input name="email" type="text" placeholder="Email" required>
@@ -64,7 +103,7 @@
     </div>
 
     {{-- Login form --}}
-    <div style="border: 3px solid black; padding: 1em; width: 300px;">
+    <div style="border: 3px solid black; padding: 1em; width: 300px;" class="registration">
         <h2>Login</h2>
         <form action="/login" method="POST">
             @csrf
@@ -73,7 +112,6 @@
             <button style="background-color: aquamarine; margin-top: 0.5em;">Login</button>
         </form>
     </div>
-@endguest
-
-</body>
-</html>
+    @endguest
+</div>
+@endsection
